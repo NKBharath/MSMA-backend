@@ -19,25 +19,14 @@ const { seedDatabase } = require("./seeddata");
 //     console.log("Hashed Password:", hash);
 // });
 
-const allowedOrigins = [
-    "http://localhost:5173",
-    "https://msma-frontend.vercel.app"
-];
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
+app.use(cors({
+  origin: ['https://msma-frontend.vercel.app', 'http://localhost:3000'], // Add your frontend URLs
+  credentials: true, // If you're using cookies/sessions
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  next();
-});
 
 app.options("*", cors());
 
@@ -49,7 +38,11 @@ app.use("/api/base-commander", baseCommanderRoutes);
 db.serialize(()=>{
     console.log("SQL lite Database ready to use");
 })
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['https://msma-frontend.vercel.app', 'http://localhost:3000'];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
