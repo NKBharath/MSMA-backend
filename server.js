@@ -6,43 +6,45 @@ const app = express();
 const db = require("./config/db");
 require("./models/initDB");
 const { seedDatabase } = require("./seeddata");
-// const bcrypt = require('bcrypt');
 
-// const password = 'basealpha'; 
-// const saltRounds = 10;
+// Setup allowed origins
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : [
+      "http://localhost:5173", // React dev server
+      "https://msma-frontend.vercel.app" // Deployed frontend
+    ];
 
-// bcrypt.hash(password, saltRounds, (err, hash) => {
-//     if(err) {
-//         console.error(err);
-//         return;
-//     }
-//     console.log("Hashed Password:", hash);
-// });
-
-
+// CORS middleware
 app.use(cors({
-  origin: ['https://msma-frontend.vercel.app', 'http://localhost:3000'], // Add your frontend URLs
-  credentials: true, // If you're using cookies/sessions
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: function(origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error(`CORS policy does not allow origin ${origin}`), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-
-app.options("*", cors());
-
+// Express JSON middleware
 app.use(express.json());
+
+// Routes
 app.use("/api/seed", seedDatabase);
 app.use("/api/admin", adminRoutes);
 app.use("/api/base-commander", baseCommanderRoutes);
 
-db.serialize(()=>{
-    console.log("SQL lite Database ready to use");
-})
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',') 
-  : ['https://msma-frontend.vercel.app', 'http://localhost:3000'];
+// SQLite ready log
+db.serialize(() => {
+  console.log("SQLite Database ready to use");
+});
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
