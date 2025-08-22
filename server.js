@@ -29,6 +29,10 @@ app.use(cors({
 
 
 app.use(express.json());
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "MSMA Backend is running" });
+});
+
 app.use("/api/seed", seedDatabase);
 app.use("/api/admin", adminRoutes);
 app.use("/api/base-commander", baseCommanderRoutes);
